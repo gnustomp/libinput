@@ -1557,8 +1557,23 @@ static void
 tp_lid_switch_event(uint64_t time, struct libinput_event *event, void *data)
 {
 	struct tp_dispatch *tp = data;
-	struct libinput_event_keyboard *kbdev;
-	unsigned int timeout;
+	struct libinput_event_switch *swdev;
+
+	swdev = libinput_event_get_switch_event(event);
+
+	switch (libinput_event_switch_get_switch_state(swdev)) {
+	case LIBINPUT_SWITCH_STATE_OFF:
+		tp_tap_resume(tp, time);
+		log_debug(tp_libinput_context(tp), "lid: resume touchpad\n");
+		break;
+	case LIBINPUT_SWITCH_STATE_ON:
+		tp_edge_scroll_stop_events(tp, time);
+		tp_gesture_cancel(tp, time);
+		tp_tap_suspend(tp, time);
+		log_debug(tp_libinput_context(tp), "lid: suspend touchpad\n");
+		break;
+	}
+
 }
 
 static void
@@ -1583,7 +1598,7 @@ tp_pair_with_lid_switch(struct evdev_device *touchpad,
 		libinput_device_add_event_listener(&lid_switch->base,
 					&tp->lid_switch.lid_switch_listener,
 					tp_lid_switch_event, tp);
-//		tp->lid_switch_listener.lid_switch = lid_switch;
+		tp->lid_switch.lid_switch = lid_switch;
 	}
 }
 

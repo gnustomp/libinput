@@ -134,7 +134,7 @@ print_event_header(struct libinput_event *ev)
 		type = "TABLET_PAD_STRIP";
 		break;
 	case LIBINPUT_EVENT_SWITCH_TOGGLE:
-		type = "TABLET_SWITCH_TOGGLE";
+		type = "SWITCH_TOGGLE";
 		break;
 	}
 

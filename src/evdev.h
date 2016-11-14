@@ -54,6 +54,7 @@ enum evdev_event_type {
 	EVDEV_ABSOLUTE_MT_MOTION,
 	EVDEV_ABSOLUTE_MT_UP,
 	EVDEV_RELATIVE_MOTION,
+	EVDEV_LID_SWITCH,
 };
 
 enum evdev_device_seat_capability {
@@ -332,6 +333,14 @@ struct fallback_dispatch {
 	/* true if we're reading events (i.e. not suspended) but we're
 	   ignoring them */
 	bool ignore_events;
+};
+
+struct lid_switch_dispatch {
+	struct evdev_dispatch base;
+
+	int lid_closed;
+
+	enum evdev_event_type pending_event;
 };
 
 struct evdev_device *

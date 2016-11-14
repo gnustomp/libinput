@@ -1074,6 +1074,15 @@ evdev_tag_keyboard(struct evdev_device *device,
 }
 
 static void
+evdev_tag_lid_switch(struct evdev_device *device,
+			struct udev_device *udev_device)
+{
+	if (udev_device_get_property_value(udev_device,
+					"ID_INPUT_SWITCH"))
+		device->tags |= EVDEV_TAG_LID_SWITCH;
+}
+
+static void
 fallback_process(struct evdev_dispatch *evdev_dispatch,
 		 struct evdev_device *device,
 		 struct input_event *event,
@@ -1107,6 +1116,62 @@ fallback_process(struct evdev_dispatch *evdev_dispatch,
 			break;
 		case EVDEV_ABSOLUTE_MOTION:
 		case EVDEV_RELATIVE_MOTION:
+		case EVDEV_NONE:
+			break;
+		}
+		break;
+	}
+}
+
+static enum evdev_event_type
+lid_switch_flush_pending_event(struct lid_switch_dispatch *dispatch,
+				struct evdev_device *device,
+				uint64_t time)
+{
+	enum evdev_event_type sent_event;
+
+	sent_event = dispatch->pending_event;
+
+	switch (dispatch->pending_event) {
+	case EVDEV_NONE:
+		break;
+	case EVDEV_LID_SWITCH:
+		switch_notify_toggle(&device->base,
+				time,
+				LIBINPUT_SWITCH_LID,
+				dispatch->lid_closed);
+		break;
+	default:
+		assert(0 && "Unknown pending event type");
+		break;
+	}
+
+	dispatch->pending_event = EVDEV_NONE;
+
+	return sent_event;
+}
+
+static void
+lid_switch_process(struct evdev_dispatch *evdev_dispatch,
+		struct evdev_device *device,
+		struct input_event *event,
+		uint64_t time)
+{
+	struct lid_switch_dispatch *dispatch = (struct lid_switch_dispatch*)evdev_dispatch;
+	enum evdev_event_type sent;
+
+	switch (event->type) {
+	case EV_SW:
+		lid_switch_flush_pending_event(dispatch, device, time);
+
+		dispatch->lid_closed = event->value;
+		if (dispatch->pending_event == EVDEV_NONE)
+			dispatch->pending_event = EVDEV_LID_SWITCH;
+		break;
+	case EV_SYN:
+		sent = lid_switch_flush_pending_event(dispatch, device, time);
+		switch (sent) {
+		case EVDEV_LID_SWITCH:
 		case EVDEV_NONE:
 			break;
 		}
@@ -1239,6 +1304,14 @@ fallback_destroy(struct evdev_dispatch *evdev_dispatch)
 	free(dispatch);
 }
 
+static void
+lid_switch_destroy(struct evdev_dispatch *evdev_dispatch)
+{
+	struct lid_switch_dispatch *dispatch = (struct lid_switch_dispatch*)evdev_dispatch;
+
+	free(dispatch);
+}
+
 static int
 evdev_calibration_has_matrix(struct libinput_device *libinput_device)
 {
@@ -1291,6 +1364,19 @@ struct evdev_dispatch_interface fallback_interface = {
 	NULL, /* device_resumed */
 	NULL, /* post_added */
 	fallback_toggle_touch, /* toggle_touch */
+};
+
+struct evdev_dispatch_interface lid_switch_interface = {
+	lid_switch_process,
+	NULL, /* suspend */
+	NULL, /* remove */
+	lid_switch_destroy,
+	NULL, /* device_added */
+	NULL, /* device_removed */
+	NULL, /* device_suspended */
+	NULL, /* device_resumed */
+	NULL, /* post_added */
+	NULL, /* toggle_touch */
 };
 
 static uint32_t
@@ -1801,6 +1887,23 @@ fallback_dispatch_create(struct libinput_device *device)
 
 	return &dispatch->base;
 }
+
+static struct evdev_dispatch *
+lid_switch_dispatch_create(void)
+{
+	struct lid_switch_dispatch *dispatch = zalloc(sizeof *dispatch);
+
+	if (dispatch == NULL)
+		return NULL;
+
+	dispatch->base.interface = &lid_switch_interface;
+	dispatch->pending_event = EVDEV_NONE;
+
+	dispatch->lid_closed = 0;
+
+	return &dispatch->base;
+}
+
 
 static inline void
 evdev_process_event(struct evdev_device *device, struct input_event *e)
@@ -2636,10 +2739,13 @@ evdev_configure_device(struct evdev_device *device)
 
 	if (udev_tags & EVDEV_UDEV_TAG_SWITCH &&
 	    libevdev_has_event_code(evdev, EV_SW, SW_LID)) {
+		dispatch = lid_switch_dispatch_create();
 		device->seat_caps |= EVDEV_DEVICE_SWITCH;
+		evdev_tag_lid_switch(device, device->udev_device);
 		log_info(libinput,
-			 "input device '%s', %s is a switch device\n",
+			 "input device '%s', %s is a lid switch device\n",
 			 device->devname, devnode);
+		return dispatch;
 	}
 
 	if (device->seat_caps & EVDEV_DEVICE_POINTER &&
@@ -3073,6 +3179,8 @@ evdev_device_has_capability(struct evdev_device *device,
 		return !!(device->seat_caps & EVDEV_DEVICE_TABLET);
 	case LIBINPUT_DEVICE_CAP_TABLET_PAD:
 		return !!(device->seat_caps & EVDEV_DEVICE_TABLET_PAD);
+	case LIBINPUT_DEVICE_CAP_SWITCH:
+		return !!(device->seat_caps & EVDEV_DEVICE_SWITCH);
 	default:
 		return false;
 	}
