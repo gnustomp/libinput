@@ -1075,11 +1075,9 @@ evdev_tag_keyboard(struct evdev_device *device,
 
 static void
 evdev_tag_lid_switch(struct evdev_device *device,
-			struct udev_device *udev_device)
+		     struct udev_device *udev_device)
 {
-	if (udev_device_get_property_value(udev_device,
-					"ID_INPUT_SWITCH"))
-		device->tags |= EVDEV_TAG_LID_SWITCH;
+	device->tags |= EVDEV_TAG_LID_SWITCH;
 }
 
 static void
@@ -1123,58 +1121,28 @@ fallback_process(struct evdev_dispatch *evdev_dispatch,
 	}
 }
 
-static enum evdev_event_type
-lid_switch_flush_pending_event(struct lid_switch_dispatch *dispatch,
-				struct evdev_device *device,
-				uint64_t time)
-{
-	enum evdev_event_type sent_event;
-
-	sent_event = dispatch->pending_event;
-
-	switch (dispatch->pending_event) {
-	case EVDEV_NONE:
-		break;
-	case EVDEV_LID_SWITCH:
-		switch_notify_toggle(&device->base,
-				time,
-				LIBINPUT_SWITCH_LID,
-				dispatch->lid_closed);
-		break;
-	default:
-		assert(0 && "Unknown pending event type");
-		break;
-	}
-
-	dispatch->pending_event = EVDEV_NONE;
-
-	return sent_event;
-}
-
 static void
 lid_switch_process(struct evdev_dispatch *evdev_dispatch,
-		struct evdev_device *device,
-		struct input_event *event,
-		uint64_t time)
+		  struct evdev_device *device,
+		  struct input_event *event,
+		  uint64_t time)
 {
 	struct lid_switch_dispatch *dispatch = (struct lid_switch_dispatch*)evdev_dispatch;
 	enum evdev_event_type sent;
 
 	switch (event->type) {
 	case EV_SW:
-		lid_switch_flush_pending_event(dispatch, device, time);
+		dispatch->lid_is_closed = event->value;
 
-		dispatch->lid_closed = event->value;
-		if (dispatch->pending_event == EVDEV_NONE)
-			dispatch->pending_event = EVDEV_LID_SWITCH;
+		switch_notify_toggle(&device->base,
+				     time,
+				     LIBINPUT_SWITCH_LID,
+				     dispatch->lid_is_closed);
 		break;
 	case EV_SYN:
-		sent = lid_switch_flush_pending_event(dispatch, device, time);
-		switch (sent) {
-		case EVDEV_LID_SWITCH:
-		case EVDEV_NONE:
-			break;
-		}
+		break;
+	default:
+		assert(0 && "Unknown event type");
 		break;
 	}
 }
@@ -1899,7 +1867,7 @@ lid_switch_dispatch_create(void)
 	dispatch->base.interface = &lid_switch_interface;
 	dispatch->pending_event = EVDEV_NONE;
 
-	dispatch->lid_closed = 0;
+	dispatch->lid_is_closed = 0;
 
 	return &dispatch->base;
 }

@@ -1557,11 +1557,11 @@ static void
 tp_lid_switch_event(uint64_t time, struct libinput_event *event, void *data)
 {
 	struct tp_dispatch *tp = data;
-	struct libinput_event_switch *swdev;
+	struct libinput_event_switch *swev;
 
-	swdev = libinput_event_get_switch_event(event);
+	swev = libinput_event_get_switch_event(event);
 
-	switch (libinput_event_switch_get_switch_state(swdev)) {
+	switch (libinput_event_switch_get_switch_state(swev)) {
 	case LIBINPUT_SWITCH_STATE_OFF:
 		tp_tap_resume(tp, time);
 		log_debug(tp_libinput_context(tp), "lid: resume touchpad\n");

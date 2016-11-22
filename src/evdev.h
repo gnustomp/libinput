@@ -338,7 +338,7 @@ struct fallback_dispatch {
 struct lid_switch_dispatch {
 	struct evdev_dispatch base;
 
-	int lid_closed;
+	bool lid_is_closed;
 
 	enum evdev_event_type pending_event;
 };
