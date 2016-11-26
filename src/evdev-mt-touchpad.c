@@ -1563,13 +1563,11 @@ tp_lid_switch_event(uint64_t time, struct libinput_event *event, void *data)
 
 	switch (libinput_event_switch_get_switch_state(swev)) {
 	case LIBINPUT_SWITCH_STATE_OFF:
-		tp_tap_resume(tp, time);
+		tp_resume(tp, tp->device);
 		log_debug(tp_libinput_context(tp), "lid: resume touchpad\n");
 		break;
 	case LIBINPUT_SWITCH_STATE_ON:
-		tp_edge_scroll_stop_events(tp, time);
-		tp_gesture_cancel(tp, time);
-		tp_tap_suspend(tp, time);
+		tp_suspend(tp, tp->device);
 		log_debug(tp_libinput_context(tp), "lid: suspend touchpad\n");
 		break;
 	}
