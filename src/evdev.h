@@ -54,7 +54,6 @@ enum evdev_event_type {
 	EVDEV_ABSOLUTE_MT_MOTION,
 	EVDEV_ABSOLUTE_MT_UP,
 	EVDEV_RELATIVE_MOTION,
-	EVDEV_LID_SWITCH,
 };
 
 enum evdev_device_seat_capability {

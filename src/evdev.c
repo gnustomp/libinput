@@ -1128,7 +1128,6 @@ lid_switch_process(struct evdev_dispatch *evdev_dispatch,
 		  uint64_t time)
 {
 	struct lid_switch_dispatch *dispatch = (struct lid_switch_dispatch*)evdev_dispatch;
-	enum evdev_event_type sent;
 
 	switch (event->type) {
 	case EV_SW:
