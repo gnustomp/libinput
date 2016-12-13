@@ -406,6 +406,7 @@ extern struct litest_test_device litest_mouse_wheel_click_count_device;
 extern struct litest_test_device litest_calibrated_touchscreen_device;
 extern struct litest_test_device litest_acer_hawaii_keyboard_device;
 extern struct litest_test_device litest_acer_hawaii_touchpad_device;
+extern struct litest_test_device litest_lid_switch_device;
 
 struct litest_test_device* devices[] = {
 	&litest_synaptics_clickpad_device,
@@ -466,6 +467,7 @@ struct litest_test_device* devices[] = {
 	&litest_calibrated_touchscreen_device,
 	&litest_acer_hawaii_keyboard_device,
 	&litest_acer_hawaii_touchpad_device,
+	&litest_lid_switch_device,
 	NULL,
 };
 
@@ -1883,6 +1885,18 @@ litest_keyboard_key(struct litest_device *d, unsigned int key, bool is_press)
 	litest_button_click(d, key, is_press);
 }
 
+void
+litest_lid_action(struct litest_device *dev,
+		  enum libinput_switch_state state)
+{
+	struct libinput *li = dev->libinput;
+
+	litest_event(dev, EV_SW, SW_LID, state);
+	litest_event(dev, EV_SYN, SYN_REPORT, 0);
+
+	libinput_dispatch(li);
+}
+
 static int
 litest_scale_axis(const struct litest_device *d,
 		  unsigned int axis,
@@ -3293,6 +3307,7 @@ main(int argc, char **argv)
 	litest_setup_tests_keyboard();
 	litest_setup_tests_device();
 	litest_setup_tests_gestures();
+	litest_setup_tests_lid();
 
 	if (mode == LITEST_MODE_LIST) {
 		litest_list_tests(&all_tests);

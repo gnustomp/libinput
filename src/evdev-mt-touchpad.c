@@ -1177,6 +1177,10 @@ tp_remove_sendevents(struct tp_dispatch *tp)
 	if (tp->dwt.keyboard)
 		libinput_device_remove_event_listener(
 					&tp->dwt.keyboard_listener);
+
+	if (tp->lid_switch.lid_switch)
+		libinput_device_remove_event_listener(
+					&tp->lid_switch.lid_switch_listener);
 }
 
 static void

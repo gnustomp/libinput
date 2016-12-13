@@ -49,6 +49,7 @@ extern void litest_setup_tests_misc(void);
 extern void litest_setup_tests_keyboard(void);
 extern void litest_setup_tests_device(void);
 extern void litest_setup_tests_gestures(void);
+extern void litest_setup_tests_lid(void);
 
 void
 litest_fail_condition(const char *file,
@@ -226,6 +227,7 @@ enum litest_device_type {
 	LITEST_CALIBRATED_TOUCHSCREEN,
 	LITEST_ACER_HAWAII_KEYBOARD,
 	LITEST_ACER_HAWAII_TOUCHPAD,
+	LITEST_LID_SWITCH,
 };
 
 enum litest_device_feature {
@@ -256,6 +258,7 @@ enum litest_device_feature {
 	LITEST_RING = 1 << 22,
 	LITEST_STRIP = 1 << 23,
 	LITEST_TRACKBALL = 1 << 24,
+	LITEST_SWITCH = 1 << 25,
 };
 
 struct litest_device {
@@ -521,6 +524,9 @@ void
 litest_keyboard_key(struct litest_device *d,
 		    unsigned int key,
 		    bool is_press);
+
+void litest_lid_action(struct litest_device *d,
+		       enum libinput_switch_state state);
 
 void
 litest_wait_for_event(struct libinput *li);
