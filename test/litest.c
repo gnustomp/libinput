@@ -1889,12 +1889,8 @@ void
 litest_lid_action(struct litest_device *dev,
 		  enum libinput_switch_state state)
 {
-	struct libinput *li = dev->libinput;
-
 	litest_event(dev, EV_SW, SW_LID, state);
 	litest_event(dev, EV_SYN, SYN_REPORT, 0);
-
-	libinput_dispatch(li);
 }
 
 static int
@@ -2801,6 +2797,23 @@ litest_is_pad_strip_event(struct libinput_event *event,
 			     source);
 
 	return p;
+}
+
+struct libinput_event_switch *
+litest_is_switch_event(struct libinput_event *event,
+		       enum libinput_switch_state state)
+{
+	struct libinput_event_switch *swev;
+	enum libinput_event_type type = LIBINPUT_EVENT_SWITCH_TOGGLE;
+
+	litest_assert_notnull(event);
+	litest_assert_event_type(event, type);
+	swev = libinput_event_get_switch_event(event);
+
+	litest_assert_int_eq(libinput_event_switch_get_switch_state(swev),
+			     state);
+
+	return swev;
 }
 
 void

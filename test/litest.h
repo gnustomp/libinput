@@ -591,6 +591,10 @@ litest_is_pad_strip_event(struct libinput_event *event,
 			  unsigned int number,
 			  enum libinput_tablet_pad_strip_axis_source source);
 
+struct libinput_event_switch *
+litest_is_switch_event(struct libinput_event *event,
+		       enum libinput_switch_state state);
+
 void
 litest_assert_button_event(struct libinput *li,
 			   unsigned int button,
