@@ -338,8 +338,6 @@ struct lid_switch_dispatch {
 	struct evdev_dispatch base;
 
 	bool lid_is_closed;
-
-	enum evdev_event_type pending_event;
 };
 
 struct evdev_device *

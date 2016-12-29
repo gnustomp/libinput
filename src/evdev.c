@@ -1864,7 +1864,6 @@ lid_switch_dispatch_create(void)
 		return NULL;
 
 	dispatch->base.interface = &lid_switch_interface;
-	dispatch->pending_event = EVDEV_NONE;
 
 	dispatch->lid_is_closed = 0;
 
