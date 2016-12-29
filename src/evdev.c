@@ -1856,14 +1856,17 @@ fallback_dispatch_create(struct libinput_device *device)
 }
 
 static struct evdev_dispatch *
-lid_switch_dispatch_create(void)
+lid_switch_dispatch_create(struct libinput_device *device)
 {
 	struct lid_switch_dispatch *dispatch = zalloc(sizeof *dispatch);
+	struct evdev_device *lid_device = (struct evdev_device *)device;
 
 	if (dispatch == NULL)
 		return NULL;
 
 	dispatch->base.interface = &lid_switch_interface;
+
+	evdev_init_sendevents(lid_device, &dispatch->base);
 
 	dispatch->lid_is_closed = 0;
 
@@ -2705,7 +2708,7 @@ evdev_configure_device(struct evdev_device *device)
 
 	if (udev_tags & EVDEV_UDEV_TAG_SWITCH &&
 	    libevdev_has_event_code(evdev, EV_SW, SW_LID)) {
-		dispatch = lid_switch_dispatch_create();
+		dispatch = lid_switch_dispatch_create(&device->base);
 		device->seat_caps |= EVDEV_DEVICE_SWITCH;
 		evdev_tag_lid_switch(device, device->udev_device);
 		log_info(libinput,
